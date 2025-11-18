@@ -182,6 +182,20 @@ body {
     margin-bottom: 20px;
 }
 
+.video-container {
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+    margin: 20px 0;
+}
+
+video {
+    width: 200px;
+    height: 150px;
+    background: #000;
+    border-radius: 10px;
+}
+
 .call-controls {
     display: flex;
     flex-wrap: wrap;

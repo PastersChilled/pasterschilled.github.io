@@ -2,7 +2,10 @@ let currentUser = '';
 let currentContact = '';
 let allUsers = [];
 let callState = 'none'; // none, calling, incoming, ongoing
+let localStream;
+let peerConnection;
 const socket = io();
+const configuration = { iceServers: [{ urls: 'stun:stun.l.google.com:19302' }] };
 
 function updateCallUI() {
     const acceptBtn = document.getElementById('acceptBtn');
@@ -129,8 +132,14 @@ document.getElementById('messageInput').addEventListener('keypress', function(e)
     }
 });
 
-document.getElementById('callBtn').addEventListener('click', function() {
+document.getElementById('callBtn').addEventListener('click', async function() {
     if (currentContact) {
+        try {
+            localStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+            document.getElementById('localVideo').srcObject = localStream;
+        } catch (error) {
+            console.error('Error accessing media devices.', error);
+        }
         socket.emit('call', { to: currentContact });
         callState = 'calling';
         updateCallUI();
@@ -139,47 +148,79 @@ document.getElementById('callBtn').addEventListener('click', function() {
     }
 });
 
-document.getElementById('acceptBtn').addEventListener('click', function() {
+document.getElementById('acceptBtn').addEventListener('click', async function() {
     callState = 'ongoing';
     updateCallUI();
+    try {
+        localStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+        document.getElementById('localVideo').srcObject = localStream;
+    } catch (error) {
+        console.error('Error accessing media devices.', error);
+    }
 });
 
 document.getElementById('rejectBtn').addEventListener('click', function() {
     callState = 'none';
+    if (localStream) {
+        localStream.getTracks().forEach(track => track.stop());
+        localStream = null;
+    }
+    document.getElementById('localVideo').srcObject = null;
+    document.getElementById('remoteVideo').srcObject = null;
     document.getElementById('call').classList.remove('visible');
     document.getElementById('messages').classList.add('visible');
 });
 
 document.getElementById('hangupBtn').addEventListener('click', function() {
     callState = 'none';
+    if (localStream) {
+        localStream.getTracks().forEach(track => track.stop());
+        localStream = null;
+    }
+    document.getElementById('localVideo').srcObject = null;
+    document.getElementById('remoteVideo').srcObject = null;
     document.getElementById('call').classList.remove('visible');
     document.getElementById('messages').classList.add('visible');
 });
 
 document.getElementById('muteBtn').addEventListener('click', function() {
     const btn = this;
-    if (btn.textContent === 'Mute Mic') {
-        btn.textContent = 'Unmute Mic';
-    } else {
-        btn.textContent = 'Mute Mic';
+    if (localStream) {
+        const audioTrack = localStream.getAudioTracks()[0];
+        if (audioTrack) {
+            audioTrack.enabled = !audioTrack.enabled;
+            btn.textContent = audioTrack.enabled ? 'Mute Mic' : 'Unmute Mic';
+        }
     }
 });
 
-document.getElementById('shareBtn').addEventListener('click', function() {
+document.getElementById('shareBtn').addEventListener('click', async function() {
     const btn = this;
     if (btn.textContent === 'Share Screen') {
-        btn.textContent = 'Stop Sharing';
+        try {
+            const screenStream = await navigator.mediaDevices.getDisplayMedia({ video: true });
+            document.getElementById('localVideo').srcObject = screenStream;
+            btn.textContent = 'Stop Sharing';
+        } catch (error) {
+            console.error('Error sharing screen.', error);
+        }
     } else {
+        // Stop sharing, back to camera
+        if (localStream) {
+            document.getElementById('localVideo').srcObject = localStream;
+        }
         btn.textContent = 'Share Screen';
     }
 });
 
 document.getElementById('cameraBtn').addEventListener('click', function() {
     const btn = this;
-    if (btn.textContent === 'Camera') {
-        btn.textContent = 'Turn Off Camera';
-    } else {
-        btn.textContent = 'Camera';
+    if (localStream) {
+        const videoTrack = localStream.getVideoTracks()[0];
+        if (videoTrack) {
+            videoTrack.enabled = !videoTrack.enabled;
+            btn.textContent = videoTrack.enabled ? 'Turn Off Camera' : 'Turn On Camera';
+        }
     }
 });
 

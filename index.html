@@ -27,6 +27,10 @@
                 <div id="messages" class="visible"></div>
                 <div id="call" class="hidden">
                     <p id="callStatus">Calling <span id="callContact"></span>...</p>
+                    <div class="video-container">
+                        <video id="localVideo" autoplay muted></video>
+                        <video id="remoteVideo" autoplay></video>
+                    </div>
                     <div class="call-controls">
                         <button id="acceptBtn" class="glass-btn">Accept</button>
                         <button id="rejectBtn" class="glass-btn">Reject</button>
