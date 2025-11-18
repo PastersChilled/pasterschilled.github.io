@@ -38,14 +38,16 @@ document.getElementById('searchInput').addEventListener('input', function() {
 });
 
 function loadContacts(filter = '') {
-    const allContacts = [];
-    const contacts = allContacts.filter(contact => contact.toLowerCase().includes(filter.toLowerCase()));
+    const contacts = allUsers.filter(contact => contact.toLowerCase().includes(filter.toLowerCase()));
     const contactsList = document.getElementById('contacts');
     contactsList.innerHTML = '';
     contacts.forEach(contact => {
         const li = document.createElement('li');
-        li.textContent = contact;
-        li.addEventListener('click', () => selectContact(contact));
+        const btn = document.createElement('button');
+        btn.classList.add('glass-btn', 'contact-btn');
+        btn.textContent = contact;
+        btn.addEventListener('click', () => selectContact(contact));
+        li.appendChild(btn);
         contactsList.appendChild(li);
     });
 }
@@ -56,8 +58,11 @@ function loadUsers(filter = '', allUsers = []) {
     usersList.innerHTML = '';
     users.forEach(user => {
         const li = document.createElement('li');
-        li.textContent = user;
-        li.addEventListener('click', () => selectContact(user));
+        const btn = document.createElement('button');
+        btn.classList.add('glass-btn', 'contact-btn');
+        btn.textContent = user;
+        btn.addEventListener('click', () => selectContact(user));
+        li.appendChild(btn);
         usersList.appendChild(li);
     });
 }
@@ -102,6 +107,7 @@ document.getElementById('hangupBtn').addEventListener('click', function() {
 
 socket.on('users', (users) => {
     allUsers = users;
+    loadContacts();
     loadUsers('', users);
 });
 
