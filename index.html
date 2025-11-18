@@ -15,9 +15,13 @@
         </div>
         <div id="chat" class="hidden">
             <div class="sidebar glass">
-                <h3>Contacts</h3>
-                <input id="searchInput" placeholder="Search contacts" class="glass-input">
-                <ul id="contacts"></ul>
+                <div class="tabs">
+                    <button id="contactsTab" class="tab-btn active">Contacts</button>
+                    <button id="usersTab" class="tab-btn">Users</button>
+                </div>
+                <input id="searchInput" placeholder="Search" class="glass-input">
+                <ul id="contacts" class="tab-content active"></ul>
+                <ul id="users" class="tab-content"></ul>
             </div>
             <div class="chat-area glass">
                 <div id="messages" class="visible"></div>

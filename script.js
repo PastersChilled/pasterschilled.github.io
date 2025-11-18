@@ -8,12 +8,31 @@ document.getElementById('loginBtn').addEventListener('click', function() {
         document.getElementById('login').classList.remove('visible');
         document.getElementById('chat').classList.add('visible');
         loadContacts();
+        loadUsers();
     }
+});
+
+document.getElementById('contactsTab').addEventListener('click', function() {
+    document.getElementById('contactsTab').classList.add('active');
+    document.getElementById('usersTab').classList.remove('active');
+    document.getElementById('contacts').classList.add('active');
+    document.getElementById('users').classList.remove('active');
+});
+
+document.getElementById('usersTab').addEventListener('click', function() {
+    document.getElementById('usersTab').classList.add('active');
+    document.getElementById('contactsTab').classList.remove('active');
+    document.getElementById('users').classList.add('active');
+    document.getElementById('contacts').classList.remove('active');
 });
 
 document.getElementById('searchInput').addEventListener('input', function() {
     const filter = this.value;
-    loadContacts(filter);
+    if (document.getElementById('contacts').classList.contains('active')) {
+        loadContacts(filter);
+    } else {
+        loadUsers(filter);
+    }
 });
 
 function loadContacts(filter = '') {
@@ -26,6 +45,19 @@ function loadContacts(filter = '') {
         li.textContent = contact;
         li.addEventListener('click', () => selectContact(contact));
         contactsList.appendChild(li);
+    });
+}
+
+function loadUsers(filter = '') {
+    const allUsers = [];
+    const users = allUsers.filter(user => user.toLowerCase().includes(filter.toLowerCase()));
+    const usersList = document.getElementById('users');
+    usersList.innerHTML = '';
+    users.forEach(user => {
+        const li = document.createElement('li');
+        li.textContent = user;
+        li.addEventListener('click', () => selectContact(user));
+        usersList.appendChild(li);
     });
 }
 
