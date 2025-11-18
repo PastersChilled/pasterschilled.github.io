@@ -68,28 +68,16 @@ function selectContact(contact) {
 }
 
 function loadMessages(contact) {
-    const messages = JSON.parse(localStorage.getItem(`messages_${currentUser}_${contact}`)) || [];
     const messagesDiv = document.getElementById('messages');
     messagesDiv.innerHTML = '';
-    messages.forEach(msg => {
-        const msgDiv = document.createElement('div');
-        msgDiv.classList.add('message');
-        msgDiv.classList.add(msg.sender === currentUser ? 'sent' : 'received');
-        msgDiv.textContent = msg.text;
-        messagesDiv.appendChild(msgDiv);
-    });
-    messagesDiv.scrollTop = messagesDiv.scrollHeight;
 }
 
 document.getElementById('sendBtn').addEventListener('click', function() {
     const messageInput = document.getElementById('messageInput');
     const text = messageInput.value;
     if (text && currentContact) {
-        const messages = JSON.parse(localStorage.getItem(`messages_${currentUser}_${currentContact}`)) || [];
-        messages.push({ sender: currentUser, text: text });
-        localStorage.setItem(`messages_${currentUser}_${currentContact}`, JSON.stringify(messages));
+        socket.emit('sendMessage', { to: currentContact, text });
         messageInput.value = '';
-        loadMessages(currentContact);
     }
 });
 
@@ -115,4 +103,17 @@ document.getElementById('hangupBtn').addEventListener('click', function() {
 socket.on('users', (users) => {
     allUsers = users;
     loadUsers('', users);
+});
+
+socket.on('receiveMessage', (data) => {
+    const { from, text } = data;
+    if (from === currentContact || from === currentUser) {
+        const messagesDiv = document.getElementById('messages');
+        const msgDiv = document.createElement('div');
+        msgDiv.classList.add('message');
+        msgDiv.classList.add(from === currentUser ? 'sent' : 'received');
+        msgDiv.textContent = text;
+        messagesDiv.appendChild(msgDiv);
+        messagesDiv.scrollTop = messagesDiv.scrollHeight;
+    }
 });

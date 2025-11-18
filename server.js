@@ -8,6 +8,7 @@ const server = http.createServer(app);
 const io = socketIo(server);
 
 let users = [];
+let sockets = {};
 
 app.use(express.static(path.join(__dirname)));
 
@@ -19,12 +20,24 @@ io.on('connection', (socket) => {
             users.push(username);
         }
         socket.username = username;
+        sockets[username] = socket;
         io.emit('users', users.filter(u => u !== username));
+    });
+
+    socket.on('sendMessage', (data) => {
+        const { to, text } = data;
+        const recipientSocket = sockets[to];
+        if (recipientSocket) {
+            recipientSocket.emit('receiveMessage', { from: socket.username, text });
+        }
+        // Also send to sender for display
+        socket.emit('receiveMessage', { from: socket.username, text });
     });
 
     socket.on('disconnect', () => {
         console.log('User disconnected');
         users = users.filter(u => u !== socket.username);
+        delete sockets[socket.username];
         io.emit('users', users);
     });
 });
