@@ -34,6 +34,14 @@ io.on('connection', (socket) => {
         socket.emit('receiveMessage', { from: socket.username, text });
     });
 
+    socket.on('call', (data) => {
+        const { to } = data;
+        const recipientSocket = sockets[to];
+        if (recipientSocket) {
+            recipientSocket.emit('incomingCall', { from: socket.username });
+        }
+    });
+
     socket.on('disconnect', () => {
         console.log('User disconnected');
         users = users.filter(u => u !== socket.username);

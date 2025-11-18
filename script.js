@@ -94,6 +94,7 @@ document.getElementById('messageInput').addEventListener('keypress', function(e)
 
 document.getElementById('callBtn').addEventListener('click', function() {
     if (currentContact) {
+        socket.emit('call', { to: currentContact });
         document.getElementById('callContact').textContent = currentContact;
         document.getElementById('call').classList.add('visible');
         document.getElementById('messages').classList.remove('visible');
@@ -127,4 +128,12 @@ socket.on('receiveMessage', (data) => {
     msgDiv.textContent = text;
     messagesDiv.appendChild(msgDiv);
     messagesDiv.scrollTop = messagesDiv.scrollHeight;
+});
+
+socket.on('incomingCall', (data) => {
+    const { from } = data;
+    currentContact = from;
+    document.getElementById('callContact').textContent = `Incoming call from ${from}`;
+    document.getElementById('call').classList.add('visible');
+    document.getElementById('messages').classList.remove('visible');
 });
