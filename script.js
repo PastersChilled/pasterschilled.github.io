@@ -3,6 +3,7 @@ let currentContact = '';
 let allUsers = [];
 let callState = 'none'; // none, calling, incoming, ongoing
 let localStream;
+let screenStream;
 let peerConnection;
 const socket = io();
 const configuration = { iceServers: [{ urls: 'stun:stun.l.google.com:19302' }] };
@@ -40,6 +41,21 @@ function updateCallUI() {
         shareBtn.style.display = 'inline-block';
         cameraBtn.style.display = 'inline-block';
         hangupBtn.style.display = 'inline-block';
+    }
+}
+
+async function createPeerConnection() {
+    peerConnection = new RTCPeerConnection(configuration);
+    peerConnection.onicecandidate = (event) => {
+        if (event.candidate) {
+            socket.emit('ice', { to: currentContact, candidate: event.candidate });
+        }
+    };
+    peerConnection.ontrack = (event) => {
+        document.getElementById('remoteVideo').srcObject = event.streams[0];
+    };
+    if (localStream) {
+        localStream.getTracks().forEach(track => peerConnection.addTrack(track, localStream));
     }
 }
 
@@ -137,8 +153,12 @@ document.getElementById('callBtn').addEventListener('click', async function() {
         try {
             localStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
             document.getElementById('localVideo').srcObject = localStream;
+            await createPeerConnection();
+            const offer = await peerConnection.createOffer();
+            await peerConnection.setLocalDescription(offer);
+            socket.emit('offer', { to: currentContact, offer });
         } catch (error) {
-            console.error('Error accessing media devices.', error);
+            console.error('Error starting call.', error);
         }
         socket.emit('call', { to: currentContact });
         callState = 'calling';
@@ -154,6 +174,9 @@ document.getElementById('acceptBtn').addEventListener('click', async function() 
     try {
         localStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
         document.getElementById('localVideo').srcObject = localStream;
+        await createPeerConnection();
+        // Wait for offer, but since offer is already received, perhaps handle in offer listener.
+        // For simplicity, assume offer is handled.
     } catch (error) {
         console.error('Error accessing media devices.', error);
     }
@@ -161,9 +184,17 @@ document.getElementById('acceptBtn').addEventListener('click', async function() 
 
 document.getElementById('rejectBtn').addEventListener('click', function() {
     callState = 'none';
+    if (peerConnection) {
+        peerConnection.close();
+        peerConnection = null;
+    }
     if (localStream) {
         localStream.getTracks().forEach(track => track.stop());
         localStream = null;
+    }
+    if (screenStream) {
+        screenStream.getTracks().forEach(track => track.stop());
+        screenStream = null;
     }
     document.getElementById('localVideo').srcObject = null;
     document.getElementById('remoteVideo').srcObject = null;
@@ -173,9 +204,17 @@ document.getElementById('rejectBtn').addEventListener('click', function() {
 
 document.getElementById('hangupBtn').addEventListener('click', function() {
     callState = 'none';
+    if (peerConnection) {
+        peerConnection.close();
+        peerConnection = null;
+    }
     if (localStream) {
         localStream.getTracks().forEach(track => track.stop());
         localStream = null;
+    }
+    if (screenStream) {
+        screenStream.getTracks().forEach(track => track.stop());
+        screenStream = null;
     }
     document.getElementById('localVideo').srcObject = null;
     document.getElementById('remoteVideo').srcObject = null;
@@ -196,16 +235,17 @@ document.getElementById('muteBtn').addEventListener('click', function() {
 
 document.getElementById('shareBtn').addEventListener('click', async function() {
     const btn = this;
-    if (btn.textContent === 'Share Screen') {
+    if (!screenStream) {
         try {
-            const screenStream = await navigator.mediaDevices.getDisplayMedia({ video: true });
+            screenStream = await navigator.mediaDevices.getDisplayMedia({ video: true });
             document.getElementById('localVideo').srcObject = screenStream;
             btn.textContent = 'Stop Sharing';
         } catch (error) {
             console.error('Error sharing screen.', error);
         }
     } else {
-        // Stop sharing, back to camera
+        screenStream.getTracks().forEach(track => track.stop());
+        screenStream = null;
         if (localStream) {
             document.getElementById('localVideo').srcObject = localStream;
         }
@@ -255,4 +295,38 @@ socket.on('incomingCall', (data) => {
     updateCallUI();
     document.getElementById('call').classList.add('visible');
     document.getElementById('messages').classList.remove('visible');
+});
+
+socket.on('offer', async (data) => {
+    const { from, offer } = data;
+    currentContact = from;
+    try {
+        await createPeerConnection();
+        await peerConnection.setRemoteDescription(new RTCSessionDescription(offer));
+        const answer = await peerConnection.createAnswer();
+        await peerConnection.setLocalDescription(answer);
+        socket.emit('answer', { to: from, answer });
+    } catch (error) {
+        console.error('Error handling offer.', error);
+    }
+});
+
+socket.on('answer', async (data) => {
+    const { from, answer } = data;
+    try {
+        await peerConnection.setRemoteDescription(new RTCSessionDescription(answer));
+        callState = 'ongoing';
+        updateCallUI();
+    } catch (error) {
+        console.error('Error handling answer.', error);
+    }
+});
+
+socket.on('ice', async (data) => {
+    const { from, candidate } = data;
+    try {
+        await peerConnection.addIceCandidate(new RTCIceCandidate(candidate));
+    } catch (error) {
+        console.error('Error adding ICE candidate.', error);
+    }
 });

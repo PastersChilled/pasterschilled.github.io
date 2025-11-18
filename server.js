@@ -42,6 +42,30 @@ io.on('connection', (socket) => {
         }
     });
 
+    socket.on('offer', (data) => {
+        const { to, offer } = data;
+        const recipientSocket = sockets[to];
+        if (recipientSocket) {
+            recipientSocket.emit('offer', { from: socket.username, offer });
+        }
+    });
+
+    socket.on('answer', (data) => {
+        const { to, answer } = data;
+        const recipientSocket = sockets[to];
+        if (recipientSocket) {
+            recipientSocket.emit('answer', { from: socket.username, answer });
+        }
+    });
+
+    socket.on('ice', (data) => {
+        const { to, candidate } = data;
+        const recipientSocket = sockets[to];
+        if (recipientSocket) {
+            recipientSocket.emit('ice', { from: socket.username, candidate });
+        }
+    });
+
     socket.on('disconnect', () => {
         console.log('User disconnected');
         users = users.filter(u => u !== socket.username);
