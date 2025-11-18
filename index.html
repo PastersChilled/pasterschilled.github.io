@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LytiGram - Liquid Glass Messenger</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <div id="login" class="glass visible">
+            <h2>LytiGram</h2>
+            <input id="username" placeholder="Username" class="glass-input">
+            <button id="loginBtn" class="glass-btn">Login</button>
+        </div>
+        <div id="chat" class="hidden">
+            <div class="sidebar glass">
+                <h3>Contacts</h3>
+                <input id="searchInput" placeholder="Search contacts" class="glass-input">
+                <ul id="contacts"></ul>
+            </div>
+            <div class="chat-area glass">
+                <div id="messages" class="visible"></div>
+                <div id="call" class="hidden">
+                    <p>Calling <span id="callContact"></span>...</p>
+                    <button id="hangupBtn" class="glass-btn">Hang Up</button>
+                </div>
+                <div class="input-area">
+                    <input id="messageInput" placeholder="Type a message" class="glass-input">
+                    <button id="sendBtn" class="glass-btn">Send</button>
+                    <button id="callBtn" class="glass-btn">Call</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script src="script.js"></script>
+</body>
+</html>
