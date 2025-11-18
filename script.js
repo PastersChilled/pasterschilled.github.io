@@ -107,13 +107,18 @@ socket.on('users', (users) => {
 
 socket.on('receiveMessage', (data) => {
     const { from, text } = data;
-    if (from === currentContact || from === currentUser) {
-        const messagesDiv = document.getElementById('messages');
-        const msgDiv = document.createElement('div');
-        msgDiv.classList.add('message');
-        msgDiv.classList.add(from === currentUser ? 'sent' : 'received');
-        msgDiv.textContent = text;
-        messagesDiv.appendChild(msgDiv);
-        messagesDiv.scrollTop = messagesDiv.scrollHeight;
+    if (from !== currentUser) {
+        // If not current contact, switch to this user
+        if (currentContact !== from) {
+            currentContact = from;
+            loadMessages(currentContact);
+        }
     }
+    const messagesDiv = document.getElementById('messages');
+    const msgDiv = document.createElement('div');
+    msgDiv.classList.add('message');
+    msgDiv.classList.add(from === currentUser ? 'sent' : 'received');
+    msgDiv.textContent = text;
+    messagesDiv.appendChild(msgDiv);
+    messagesDiv.scrollTop = messagesDiv.scrollHeight;
 });
