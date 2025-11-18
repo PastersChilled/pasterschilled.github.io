@@ -26,8 +26,15 @@
             <div class="chat-area glass">
                 <div id="messages" class="visible"></div>
                 <div id="call" class="hidden">
-                    <p>Calling <span id="callContact"></span>...</p>
-                    <button id="hangupBtn" class="glass-btn">Hang Up</button>
+                    <p id="callStatus">Calling <span id="callContact"></span>...</p>
+                    <div class="call-controls">
+                        <button id="acceptBtn" class="glass-btn">Accept</button>
+                        <button id="rejectBtn" class="glass-btn">Reject</button>
+                        <button id="muteBtn" class="glass-btn">Mute Mic</button>
+                        <button id="shareBtn" class="glass-btn">Share Screen</button>
+                        <button id="cameraBtn" class="glass-btn">Camera</button>
+                        <button id="hangupBtn" class="glass-btn">Hang Up</button>
+                    </div>
                 </div>
                 <div class="input-area">
                     <input id="messageInput" placeholder="Type a message" class="glass-input">

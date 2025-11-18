@@ -1,7 +1,44 @@
 let currentUser = '';
 let currentContact = '';
 let allUsers = [];
+let callState = 'none'; // none, calling, incoming, ongoing
 const socket = io();
+
+function updateCallUI() {
+    const acceptBtn = document.getElementById('acceptBtn');
+    const rejectBtn = document.getElementById('rejectBtn');
+    const muteBtn = document.getElementById('muteBtn');
+    const shareBtn = document.getElementById('shareBtn');
+    const cameraBtn = document.getElementById('cameraBtn');
+    const hangupBtn = document.getElementById('hangupBtn');
+    const statusP = document.getElementById('callStatus');
+
+    if (callState === 'incoming') {
+        statusP.textContent = `Incoming call from ${currentContact}`;
+        acceptBtn.style.display = 'inline-block';
+        rejectBtn.style.display = 'inline-block';
+        muteBtn.style.display = 'none';
+        shareBtn.style.display = 'none';
+        cameraBtn.style.display = 'none';
+        hangupBtn.style.display = 'none';
+    } else if (callState === 'calling') {
+        statusP.textContent = `Calling ${currentContact}...`;
+        acceptBtn.style.display = 'none';
+        rejectBtn.style.display = 'none';
+        muteBtn.style.display = 'inline-block';
+        shareBtn.style.display = 'inline-block';
+        cameraBtn.style.display = 'inline-block';
+        hangupBtn.style.display = 'inline-block';
+    } else if (callState === 'ongoing') {
+        statusP.textContent = `In call with ${currentContact}`;
+        acceptBtn.style.display = 'none';
+        rejectBtn.style.display = 'none';
+        muteBtn.style.display = 'inline-block';
+        shareBtn.style.display = 'inline-block';
+        cameraBtn.style.display = 'inline-block';
+        hangupBtn.style.display = 'inline-block';
+    }
+}
 
 document.getElementById('loginBtn').addEventListener('click', function() {
     const username = document.getElementById('username').value;
@@ -95,15 +132,55 @@ document.getElementById('messageInput').addEventListener('keypress', function(e)
 document.getElementById('callBtn').addEventListener('click', function() {
     if (currentContact) {
         socket.emit('call', { to: currentContact });
-        document.getElementById('callContact').textContent = currentContact;
+        callState = 'calling';
+        updateCallUI();
         document.getElementById('call').classList.add('visible');
         document.getElementById('messages').classList.remove('visible');
     }
 });
 
-document.getElementById('hangupBtn').addEventListener('click', function() {
+document.getElementById('acceptBtn').addEventListener('click', function() {
+    callState = 'ongoing';
+    updateCallUI();
+});
+
+document.getElementById('rejectBtn').addEventListener('click', function() {
+    callState = 'none';
     document.getElementById('call').classList.remove('visible');
     document.getElementById('messages').classList.add('visible');
+});
+
+document.getElementById('hangupBtn').addEventListener('click', function() {
+    callState = 'none';
+    document.getElementById('call').classList.remove('visible');
+    document.getElementById('messages').classList.add('visible');
+});
+
+document.getElementById('muteBtn').addEventListener('click', function() {
+    const btn = this;
+    if (btn.textContent === 'Mute Mic') {
+        btn.textContent = 'Unmute Mic';
+    } else {
+        btn.textContent = 'Mute Mic';
+    }
+});
+
+document.getElementById('shareBtn').addEventListener('click', function() {
+    const btn = this;
+    if (btn.textContent === 'Share Screen') {
+        btn.textContent = 'Stop Sharing';
+    } else {
+        btn.textContent = 'Share Screen';
+    }
+});
+
+document.getElementById('cameraBtn').addEventListener('click', function() {
+    const btn = this;
+    if (btn.textContent === 'Camera') {
+        btn.textContent = 'Turn Off Camera';
+    } else {
+        btn.textContent = 'Camera';
+    }
 });
 
 socket.on('users', (users) => {
@@ -133,7 +210,8 @@ socket.on('receiveMessage', (data) => {
 socket.on('incomingCall', (data) => {
     const { from } = data;
     currentContact = from;
-    document.getElementById('callContact').textContent = `Incoming call from ${from}`;
+    callState = 'incoming';
+    updateCallUI();
     document.getElementById('call').classList.add('visible');
     document.getElementById('messages').classList.remove('visible');
 });

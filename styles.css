@@ -181,3 +181,11 @@ body {
     padding: 20px;
     margin-bottom: 20px;
 }
+
+.call-controls {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    justify-content: center;
+    margin-top: 20px;
+}
