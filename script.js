@@ -59,6 +59,15 @@ async function createPeerConnection() {
     }
 }
 
+function replaceVideoTrack(newStream) {
+    if (peerConnection) {
+        const sender = peerConnection.getSenders().find(s => s.track && s.track.kind === 'video');
+        if (sender) {
+            sender.replaceTrack(newStream.getVideoTracks()[0]);
+        }
+    }
+}
+
 document.getElementById('loginBtn').addEventListener('click', function() {
     const username = document.getElementById('username').value;
     if (username) {
@@ -174,9 +183,12 @@ document.getElementById('acceptBtn').addEventListener('click', async function() 
     try {
         localStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
         document.getElementById('localVideo').srcObject = localStream;
-        await createPeerConnection();
-        // Wait for offer, but since offer is already received, perhaps handle in offer listener.
-        // For simplicity, assume offer is handled.
+        if (peerConnection) {
+            localStream.getTracks().forEach(track => peerConnection.addTrack(track, localStream));
+            const answer = await peerConnection.createAnswer();
+            await peerConnection.setLocalDescription(answer);
+            socket.emit('answer', { to: currentContact, answer });
+        }
     } catch (error) {
         console.error('Error accessing media devices.', error);
     }
@@ -239,6 +251,7 @@ document.getElementById('shareBtn').addEventListener('click', async function() {
         try {
             screenStream = await navigator.mediaDevices.getDisplayMedia({ video: true });
             document.getElementById('localVideo').srcObject = screenStream;
+            replaceVideoTrack(screenStream);
             btn.textContent = 'Stop Sharing';
         } catch (error) {
             console.error('Error sharing screen.', error);
@@ -248,6 +261,7 @@ document.getElementById('shareBtn').addEventListener('click', async function() {
         screenStream = null;
         if (localStream) {
             document.getElementById('localVideo').srcObject = localStream;
+            replaceVideoTrack(localStream);
         }
         btn.textContent = 'Share Screen';
     }
@@ -301,11 +315,17 @@ socket.on('offer', async (data) => {
     const { from, offer } = data;
     currentContact = from;
     try {
-        await createPeerConnection();
+        peerConnection = new RTCPeerConnection(configuration);
+        peerConnection.onicecandidate = (event) => {
+            if (event.candidate) {
+                socket.emit('ice', { to: currentContact, candidate: event.candidate });
+            }
+        };
+        peerConnection.ontrack = (event) => {
+            document.getElementById('remoteVideo').srcObject = event.streams[0];
+        };
         await peerConnection.setRemoteDescription(new RTCSessionDescription(offer));
-        const answer = await peerConnection.createAnswer();
-        await peerConnection.setLocalDescription(answer);
-        socket.emit('answer', { to: from, answer });
+        // Wait for accept to add tracks and create answer
     } catch (error) {
         console.error('Error handling offer.', error);
     }
