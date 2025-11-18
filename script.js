@@ -1,14 +1,16 @@
 let currentUser = '';
 let currentContact = '';
+let allUsers = [];
+const socket = io();
 
 document.getElementById('loginBtn').addEventListener('click', function() {
     const username = document.getElementById('username').value;
     if (username) {
         currentUser = username;
+        socket.emit('login', username);
         document.getElementById('login').classList.remove('visible');
         document.getElementById('chat').classList.add('visible');
         loadContacts();
-        loadUsers();
     }
 });
 
@@ -31,7 +33,7 @@ document.getElementById('searchInput').addEventListener('input', function() {
     if (document.getElementById('contacts').classList.contains('active')) {
         loadContacts(filter);
     } else {
-        loadUsers(filter);
+        loadUsers(filter, allUsers);
     }
 });
 
@@ -48,8 +50,7 @@ function loadContacts(filter = '') {
     });
 }
 
-function loadUsers(filter = '') {
-    const allUsers = [];
+function loadUsers(filter = '', allUsers = []) {
     const users = allUsers.filter(user => user.toLowerCase().includes(filter.toLowerCase()));
     const usersList = document.getElementById('users');
     usersList.innerHTML = '';
@@ -109,4 +110,9 @@ document.getElementById('callBtn').addEventListener('click', function() {
 document.getElementById('hangupBtn').addEventListener('click', function() {
     document.getElementById('call').classList.remove('visible');
     document.getElementById('messages').classList.add('visible');
+});
+
+socket.on('users', (users) => {
+    allUsers = users;
+    loadUsers('', users);
 });
